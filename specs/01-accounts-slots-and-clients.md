@@ -1,6 +1,6 @@
 # SPEC 01 — Family accounts, slots, clients and payments
 
-> **Status:** In review
+> **Status:** Approved
 > **Depends on:** none
 > **Date:** 2026-10-12
 > **Revised:** 2026-10-12 — promo across accounts, move removed (see "Revision 1")
