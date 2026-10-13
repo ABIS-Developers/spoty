@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarDays, Mail, Pencil, SearchX, StickyNote, Wallet, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, Mail, Pencil, SearchX, StickyNote, Wallet, type LucideIcon } from "lucide-react";
 import { Button, CopyButton, EmptyState, PageSpinner } from "../../../shared/components";
 import { formatDisplayDate } from "../../../shared/lib/dates";
 import { formatMoney } from "../../../shared/lib/money";
 import { sharedTexts } from "../../../shared/texts";
+import { buildOccupants, useClientsData } from "../../clients";
 import { nextBillingDate } from "../lib/billing";
 import { useAccountsStore } from "../store/accountsStore";
 import { accountsTexts } from "../texts";
@@ -29,6 +30,7 @@ export function AccountDetailPage() {
   const account = useAccountsStore((state) => state.accounts.find((item) => item.id === id));
   const status = useAccountsStore((state) => state.status);
   const load = useAccountsStore((state) => state.load);
+  const { clients, payments, status: clientsStatus, retry } = useClientsData();
   const [editOpen, setEditOpen] = useState(false);
   const [today] = useState(() => new Date());
   const { detail } = accountsTexts;
@@ -110,8 +112,21 @@ export function AccountDetailPage() {
       </section>
 
       <h2 className="mt-8 mb-3 text-lg font-semibold">{detail.slotsTitle}</h2>
-      {/* Occupants come from the clients store once client registration exists (step 8). */}
-      <SlotGrid accountId={account.id} occupants={[]} />
+      {clientsStatus === "error" ? (
+        <div role="alert" className="flex flex-col items-center gap-3 rounded-2xl bg-white p-6 text-center">
+          <p className="flex items-center gap-2 text-status-overdue">
+            <AlertTriangle aria-hidden="true" className="size-5" />
+            {detail.slotsLoadError}
+          </p>
+          <Button variant="secondary" onClick={retry}>
+            {detail.retry}
+          </Button>
+        </div>
+      ) : clientsStatus !== "ready" && clients.length === 0 ? (
+        <PageSpinner />
+      ) : (
+        <SlotGrid accountId={account.id} occupants={buildOccupants(account.id, clients, payments, today)} />
+      )}
 
       <AccountForm open={editOpen} onClose={() => setEditOpen(false)} account={account} />
     </>

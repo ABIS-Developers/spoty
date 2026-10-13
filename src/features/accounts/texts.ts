@@ -35,6 +35,8 @@ export const accountsTexts = {
     notes: "Notas",
     edit: "Editar",
     slotsTitle: "Espacios",
+    slotsLoadError: "No se pudieron cargar los clientes.",
+    retry: "Reintentar",
   },
   slots: {
     admin: "Admin",

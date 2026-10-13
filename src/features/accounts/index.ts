@@ -1,13 +1,15 @@
 export { AccountDetailPage } from "./components/AccountDetailPage";
 export { AccountsPage } from "./components/AccountsPage";
 export { SlotGrid, type SlotTileOccupant } from "./components/SlotGrid";
+export type { Account, AccountStatus } from "./api/accountsApi";
 export { nextBillingDate } from "./lib/billing";
+export { useAccountsStore } from "./store/accountsStore";
 export {
   ADMIN_SLOT,
-  SELLABLE_SLOTS,
   areSlotsFree,
   freeSlots,
   occupiedSlots,
+  sellableSlots,
   slotStatuses,
   type OccupantStatus,
   type SlotClient,

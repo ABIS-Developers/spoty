@@ -1,6 +1,6 @@
-import { useState, type FormEvent, type ReactNode } from "react";
-import { AlertTriangle, CalendarDays, KeyRound, Mail, StickyNote, Tag, type LucideIcon } from "lucide-react";
-import { Button, DayOfMonthPicker, Dialog, Input, TextArea } from "../../../shared/components";
+import { useState, type FormEvent } from "react";
+import { AlertTriangle, CalendarDays, KeyRound, Mail, StickyNote, Tag } from "lucide-react";
+import { Button, DayOfMonthPicker, Dialog, FormSection, Input, TextArea } from "../../../shared/components";
 import { sharedTexts } from "../../../shared/texts";
 import type { Account } from "../api/accountsApi";
 import {
@@ -31,18 +31,6 @@ function valuesFrom(account?: Account): AccountFormValues {
     monthlyCost: String(account.monthlyCost),
     notes: account.notes ?? "",
   };
-}
-
-function Section({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
-  return (
-    <fieldset className="flex flex-col gap-4">
-      <legend className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-wide text-olive-700 uppercase">
-        <Icon aria-hidden="true" className="size-4" />
-        {title}
-      </legend>
-      {children}
-    </fieldset>
-  );
 }
 
 export function AccountForm({ open, onClose, account, onSaved }: AccountFormProps) {
@@ -89,7 +77,7 @@ function AccountFormBody({ account, onClose, onSaved }: Omit<AccountFormProps, "
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6 pt-1">
-      <Section icon={Tag} title={form.sections.general}>
+      <FormSection icon={Tag} title={form.sections.general}>
         <Input
           label={form.alias}
           placeholder={form.aliasPlaceholder}
@@ -98,9 +86,9 @@ function AccountFormBody({ account, onClose, onSaved }: Omit<AccountFormProps, "
           error={errors.alias}
           autoComplete="off"
         />
-      </Section>
+      </FormSection>
 
-      <Section icon={KeyRound} title={form.sections.access}>
+      <FormSection icon={KeyRound} title={form.sections.access}>
         <Input
           label={form.spotifyEmail}
           type="email"
@@ -122,9 +110,9 @@ function AccountFormBody({ account, onClose, onSaved }: Omit<AccountFormProps, "
           onChange={(event) => setField("spotifyPassword", event.target.value)}
           error={errors.spotifyPassword}
         />
-      </Section>
+      </FormSection>
 
-      <Section icon={CalendarDays} title={form.sections.billing}>
+      <FormSection icon={CalendarDays} title={form.sections.billing}>
         <DayOfMonthPicker
           label={form.billingDay}
           hint={form.billingDayHint}
@@ -140,15 +128,15 @@ function AccountFormBody({ account, onClose, onSaved }: Omit<AccountFormProps, "
           onChange={(event) => setField("monthlyCost", event.target.value)}
           error={errors.monthlyCost}
         />
-      </Section>
+      </FormSection>
 
-      <Section icon={StickyNote} title={form.sections.notes}>
+      <FormSection icon={StickyNote} title={form.sections.notes}>
         <TextArea
           label={form.notes}
           value={values.notes}
           onChange={(event) => setField("notes", event.target.value)}
         />
-      </Section>
+      </FormSection>
 
       {saveError && (
         <p role="alert" className="flex items-center gap-1.5 text-sm text-status-overdue">

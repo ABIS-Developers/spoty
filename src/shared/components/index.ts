@@ -7,6 +7,7 @@ export { DatePicker } from "./DatePicker";
 export { DayOfMonthPicker } from "./DayOfMonthPicker";
 export { Dialog } from "./Dialog";
 export { EmptyState } from "./EmptyState";
+export { FormSection } from "./FormSection";
 export { Field } from "./Field";
 export { controlClasses, fieldDescribedBy } from "./fieldUtils";
 export { Input, TextArea } from "./Input";

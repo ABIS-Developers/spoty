@@ -2,11 +2,13 @@ import { SLOTS_PER_ACCOUNT } from "../../clients";
 
 export const ADMIN_SLOT = 0;
 
-/** Sellable slot numbers, 1–5. */
-export const SELLABLE_SLOTS: readonly number[] = Array.from(
-  { length: SLOTS_PER_ACCOUNT },
-  (_, index) => index + 1,
-);
+/**
+ * Sellable slot numbers, 1–5. A function, not a constant: accounts and clients
+ * import each other, so nothing here may read an import at module load.
+ */
+export function sellableSlots(): number[] {
+  return Array.from({ length: SLOTS_PER_ACCOUNT }, (_, index) => index + 1);
+}
 
 export type SlotClient = {
   accountId: string;
@@ -26,7 +28,7 @@ export function occupiedSlots(account: { id: string }, clients: ReadonlyArray<Sl
 /** Sellable slots no ACTIVE client of `account` holds. */
 export function freeSlots(account: { id: string }, clients: ReadonlyArray<SlotClient>): number[] {
   const taken = new Set(occupiedSlots(account, clients));
-  return SELLABLE_SLOTS.filter((slot) => !taken.has(slot));
+  return sellableSlots().filter((slot) => !taken.has(slot));
 }
 
 /** True when every `selected` slot is sellable, distinct and currently free. */

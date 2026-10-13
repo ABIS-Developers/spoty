@@ -1,4 +1,4 @@
-import { SELLABLE_SLOTS, slotStatuses, type OccupantStatus, type SlotOccupant } from "../lib/slots";
+import { sellableSlots, slotStatuses, type OccupantStatus, type SlotOccupant } from "../lib/slots";
 import { sharedTexts } from "../../../shared/texts";
 import { accountsTexts } from "../texts";
 
@@ -20,13 +20,13 @@ export function SlotDots({ occupants }: { occupants: ReadonlyArray<SlotOccupant>
   };
   const summary = [
     `${card.adminSlot}`,
-    ...SELLABLE_SLOTS.map((slot) => `${card.slot} ${slot}: ${describe(slot)}`),
+    ...sellableSlots().map((slot) => `${card.slot} ${slot}: ${describe(slot)}`),
   ].join(", ");
 
   return (
     <div role="img" aria-label={`${card.slotDots}: ${summary}`} className="flex items-center gap-1.5">
       <span title={card.adminSlot} className="size-3 rounded-full bg-olive-900" />
-      {SELLABLE_SLOTS.map((slot) => {
+      {sellableSlots().map((slot) => {
         const occupied = statuses.has(slot);
         const status = statuses.get(slot);
         const color = !occupied

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, Plus, Users } from "lucide-react";
 import { Button, EmptyState, PageSpinner } from "../../../shared/components";
+import { buildOccupants, useClientsData } from "../../clients";
 import { useAccountsStore } from "../store/accountsStore";
 import { accountsTexts } from "../texts";
 import { AccountCard } from "./AccountCard";
@@ -12,6 +13,7 @@ export function AccountsPage() {
   const status = useAccountsStore((state) => state.status);
   const load = useAccountsStore((state) => state.load);
   const navigate = useNavigate();
+  const { clients, payments } = useClientsData();
   const [formOpen, setFormOpen] = useState(false);
   const [today] = useState(() => new Date());
   const { page } = accountsTexts;
@@ -60,8 +62,11 @@ export function AccountsPage() {
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((account) => (
             <li key={account.id}>
-              {/* Occupants come from the clients store once client registration exists (step 8). */}
-              <AccountCard account={account} occupants={[]} today={today} />
+              <AccountCard
+                account={account}
+                occupants={buildOccupants(account.id, clients, payments, today)}
+                today={today}
+              />
             </li>
           ))}
         </ul>

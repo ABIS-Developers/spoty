@@ -3,7 +3,7 @@ import { CalendarDays, Lock, UserPlus, Users } from "lucide-react";
 import { Avatar, StatusBadge } from "../../../shared/components";
 import { formatDisplayDate } from "../../../shared/lib/dates";
 import { formatMoney } from "../../../shared/lib/money";
-import { SELLABLE_SLOTS, type OccupantStatus } from "../lib/slots";
+import { sellableSlots, type OccupantStatus } from "../lib/slots";
 import { accountsTexts } from "../texts";
 
 /** An ACTIVE client shown on the grid. */
@@ -32,7 +32,7 @@ function buildUnits(occupants: ReadonlyArray<SlotTileOccupant>): Unit[] {
 
   const units: Unit[] = [];
   const placed = new Set<string>();
-  for (const slot of SELLABLE_SLOTS) {
+  for (const slot of sellableSlots()) {
     const occupant = bySlot.get(slot);
     if (!occupant) units.push({ kind: "free", slot });
     else if (!placed.has(occupant.id)) {
