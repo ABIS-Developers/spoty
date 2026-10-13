@@ -1,8 +1,9 @@
 # SPEC 01 — Family accounts, slots, clients and payments
 
-> **Status:** Approved
+> **Status:** In review
 > **Depends on:** none
 > **Date:** 2026-10-12
+> **Revised:** 2026-10-12 — promo across accounts, move removed (see "Revision 1")
 > **Objective:** A PIN-protected admin app to register Spotify family accounts with their 5 sellable slots, assign clients (single or 2-slot promo) to those slots, and record their monthly payments with a computed paid / pending / overdue status.
 
 ---
@@ -25,12 +26,14 @@ The business resells slots of Spotify family plans. Today there is no single pla
 - The account password is masked by default, with "show" and "copy" buttons. The email also has a "copy" button.
 - "Delete" of an account is a soft close (`status: CLOSED`). It is allowed only when the account has no active clients. Closed accounts are hidden by default and keep their history.
 - Client registration with name, phone/WhatsApp, the client's Spotify email, notes, start date, payment day, plan type and amount.
-- Plan type `SINGLE` takes 1 slot and defaults to `80`. Plan type `PROMO` takes 2 slots in the same account, has one payer and one payment day, and defaults to `150`. A promo also stores the second person's name and Spotify email.
+- Plan type `SINGLE` takes 1 slot and defaults to `80`. Plan type `PROMO` takes 2 slots, has one payer and one payment day, and defaults to `150`. A promo also stores the second person's name and Spotify email.
+- A promo's 2 slots can be in the same account or in 2 different active accounts: the payer (person 1) in one account and person 2 in another. Example: Cuenta 1 has 1 free slot and Cuenta 2 has 1 free slot, so the promo uses one of each.
+- The income of a promo split across 2 accounts is attributed half to each account (rules in the data model). The UI says so explicitly wherever the split amount appears.
 - The amount is pre-filled from the plan type and stays editable.
 - The admin manually picks the account and the free slot(s) for each client. The app does not auto-suggest or auto-open accounts.
 - The client's payment day defaults to the day of the start date and stays editable.
 - A "Primer pago recibido" (first payment received) checkbox, checked by default, creates the payment for the current period on registration.
-- Client edit, plus moving a client to other free slot(s) in the same or another active account. A promo moves only to an account with 2 free slots.
+- Client edit: name, phone, Spotify email, second person, start date, payment day, amount and notes. Plan type, account and slots are fixed after registration.
 - Client cancellation ("Dar de baja"): it sets `status: CANCELLED`, frees the slot(s) and keeps the client and their payments as history.
 - Payment registration per client: period (`YYYY-MM`), paid date and amount. Each client has a payment history list.
 - A payment status computed for the current period: `PAID`, `PENDING` or `OVERDUE` (rules in the data model).
@@ -72,7 +75,8 @@ const schema = a.schema({
     monthlyCost: a.integer().required(),    // default 240
     status: a.ref("AccountStatus").required(),
     notes: a.string(),
-    clients: a.hasMany("Client", "accountId"),
+    clients: a.hasMany("Client", "accountId"),             // person 1 (payer) slots
+    secondClients: a.hasMany("Client", "secondAccountId"), // person 2 slots of promos
   }).authorization((allow) => [allow.custom()]),
 
   Client: a.model({
@@ -86,7 +90,10 @@ const schema = a.schema({
     paymentDay: a.integer().required(),     // 1–31, default = day of startDate
     planType: a.ref("PlanType").required(),
     amount: a.integer().required(),         // monthly, default from PRICES
-    slots: a.integer().array().required(),  // [n] for SINGLE, [n, m] for PROMO; values 1–5
+    slot: a.integer().required(),           // person 1 slot in accountId; 1–5
+    secondAccountId: a.id(),                // PROMO only; equals accountId when both slots are in one account
+    secondAccount: a.belongsTo("Account", "secondAccountId"),
+    secondSlot: a.integer(),                // PROMO only; person 2 slot in secondAccountId; 1–5
     secondName: a.string(),                 // PROMO only
     secondSpotifyEmail: a.email(),          // PROMO only
     status: a.ref("ClientStatus").required(),
@@ -123,8 +130,18 @@ Payment status rules, implemented in `src/features/payments/lib/paymentStatus.ts
 
 Slot rules:
 
-- A slot is free when no `ACTIVE` client of that account has it in `slots`.
-- These rules are validated client-side before every create or move. With a single admin, concurrent writes are not a concern.
+- A client occupies `(accountId, slot)` and, for a promo, also `(secondAccountId, secondSlot)`.
+- A slot of an account is free when no `ACTIVE` client occupies it through either pair.
+- A promo's 2 slots must be different. When `secondAccountId === accountId` they are 2 slots of the same account.
+- These rules are validated client-side before every create, and re-validated against fresh data right before saving. With a single admin, concurrent writes are not a concern.
+
+Income attribution rules, implemented in `src/features/clients/lib/revenue.ts` as a pure function `accountShare(client, accountId)`:
+
+- `SINGLE`: the whole `amount` goes to `accountId`.
+- `PROMO` in one account: the whole `amount` goes to that account.
+- `PROMO` split across 2 accounts: `ceil(amount / 2)` goes to the payer's account (`accountId`) and `floor(amount / 2)` to `secondAccountId`. Example: `$150` → `$75` + `$75`; `$151` → `$76` + `$75`.
+- Why: each account gives up 1 slot to the promo, so each one earns the part of the price that pays for that slot. SPEC 02 earnings use `accountShare`.
+- The UI shows the split with its reason: the slot tile reads "Promo compartida · $75 de $150", and the client detail explains "El pago de $150 se reparte $75 por cuenta porque la promo usa un espacio en cada una".
 
 Conventions:
 
@@ -176,9 +193,10 @@ src/
     clients/
       api/clientsApi.ts
       store/clientsStore.ts
-      components/ClientForm.tsx, ClientDetailPage.tsx, MoveClientDialog.tsx,
-                 CancelClientDialog.tsx
+      components/ClientForm.tsx, ClientDetailPage.tsx, ClientEditDialog.tsx,
+                 PaymentHero.tsx, CancelClientDialog.tsx
       lib/pricing.ts
+      lib/revenue.ts              # accountShare(client, accountId)
       texts.ts
     payments/
       api/paymentsApi.ts
@@ -219,11 +237,11 @@ Tailwind v4 `@theme` tokens in `src/index.css`:
 UX rules:
 
 - Use the `ui-ux-pro-max` skill during implementation for layout, spacing, typography and interaction details.
-- Use `lucide-react` icons. Examples: `Lock` for the admin slot, `UserPlus` for a free slot, `Users` for promo, `CheckCircle2` / `Clock` / `AlertTriangle` for statuses, `Eye` / `EyeOff` / `Copy` for credentials, `CalendarDays` for dates, `ArrowRightLeft` for move and `UserX` for cancel.
+- Use `lucide-react` icons. Examples: `Lock` for the admin slot, `UserPlus` for a free slot, `Users` for promo, `CheckCircle2` / `Clock` / `AlertTriangle` for statuses, `Eye` / `EyeOff` / `Copy` for credentials, `CalendarDays` for dates and `UserX` for cancel.
 - Status is never shown by color alone. Every badge pairs an icon with a Spanish label ("Pagado", "Pendiente", "Vencido").
-- The slot grid shows 6 tiles. The admin tile is locked. Free tiles have a dashed outline and "+ Asignar". Occupied tiles show the name and a status badge. The 2 tiles of a promo are visually joined, with a single "Promo · $150 · 1 pago" label.
+- The slot grid shows 6 tiles. The admin tile is locked. Free tiles have a dashed outline and "+ Asignar". Occupied tiles show the name and a status badge. The 2 tiles of a promo in one account are visually joined, with a single "Promo · $150 · 1 pago" label. A promo split across 2 accounts shows 1 tile in each account with "Promo compartida · $75 de $150" and a link to the other account ("con Cuenta 2").
 - The account card shows `occupied/5` slots, the next Spotify billing date and the monthly cost.
-- The client form switches between "Suelto" and "Promo (2 espacios)". Promo reveals the second-person fields and requires 2 free slots to be chosen.
+- The client form switches between "Suelto" and "Promo (2 espacios)". Promo reveals the second-person fields. Person 1's slot is picked in the current account's mini grid. Person 2's slot is picked by first choosing the account with selectable cards (default: the current account; only active accounts with a free slot are offered) and then tapping a free tile of that account. When the second account differs, the form shows the half-and-half split and its reason before saving.
 - `DatePicker` is a popover calendar built on `react-day-picker` with the `es` locale. `DayOfMonthPicker` is a 7-column grid of 1–31.
 - No HTML tables (`<table>`) anywhere in the UI. All data is shown visually as cards, tiles, chips, avatars, progress bars and timelines.
 - The accounts list is a card grid. Each card has an occupancy progress bar (`occupied/5`) and a mini row of 6 slot dots colored by status.
@@ -257,8 +275,8 @@ Responsive rules (mobile-first, Tailwind breakpoints):
 6. **Accounts list and form.** Build `accountsApi`, `accountsStore`, `AccountsPage`, `AccountCard` and `AccountForm` (create/edit). Manual test: create an account and see it listed with `0/5` slots.
 7. **Account detail.** Build `AccountDetailPage` with `PasswordField` (show/copy), a copy button for the email and a `SlotGrid` (admin plus 5 free slots).
 8. **Client registration.** Build `clientsApi`, `clientsStore` and `ClientForm` for SINGLE and PROMO, with slot selection, defaults and the "Primer pago recibido" option. Manual test: a promo occupies 2 joined tiles with a "Pagado" badge.
-9. **Client detail and payments.** Build `ClientDetailPage`, `paymentsApi`, `paymentsStore`, `PaymentForm` and `PaymentHistory`. Registering the current period flips the status to "Pagado".
-10. **Move client.** Build `MoveClientDialog`, which offers only accounts with enough free slots and updates `accountId` and `slots`.
+9. **Client detail and payments.** Build `ClientDetailPage`, `paymentsApi`, `paymentsStore`, `PaymentForm` and `PaymentHistory`, plus `ClientEditDialog` and `PaymentHero`. Registering the current period flips the status to "Pagado".
+10. **Promo across accounts.** Replace `Client.slots` with `slot` + `secondAccountId` + `secondSlot` (redeploy the sandbox; existing test data is dropped). Update `slots.ts`, `ClientForm` (person 2 account + slot), `SlotGrid`, `AccountCard`, `ClientDetailPage`, and add `revenue.ts`. Manual test: with 1 free slot in Cuenta 1 and 1 in Cuenta 2, register a promo across both; each account shows 1 tile with "Promo compartida · $75 de $150", both cards count the slot, and 1 payment is created.
 11. **Cancel client and close account.** Build `CancelClientDialog`, which sets `CANCELLED` and `cancelledAt` and frees the slots. "Eliminar cuenta" is enabled only with 0 active clients and sets `CLOSED`. A "Mostrar cerradas" toggle shows closed accounts on `AccountsPage`.
 
 ---
@@ -276,8 +294,11 @@ Responsive rules (mobile-first, Tailwind breakpoints):
 - [ ] Account detail shows exactly 6 slot tiles: 1 locked admin tile and 5 sellable tiles.
 - [ ] The password is masked by default. "Mostrar" reveals it and "Copiar" puts it on the clipboard.
 - [ ] Choosing "Suelto" pre-fills `$80`. Choosing "Promo" pre-fills `$150`. Both amounts can be edited before saving.
-- [ ] A promo cannot be saved unless exactly 2 free slots of the same account are selected.
-- [ ] A promo appears as 2 joined tiles with one "Promo · $150 · 1 pago" label, and creates 1 payment, not 2.
+- [ ] A promo cannot be saved unless exactly 2 different free slots are selected: 2 in one account, or 1 in each of 2 active accounts.
+- [ ] A promo split across 2 accounts shows 1 tile in each account with "Promo compartida · $75 de $150" and a link to the other account, and it counts as occupied in both account cards.
+- [ ] `accountShare` returns `75` for each account of a split `$150` promo, `76`/`75` for `$151`, and the full amount for a SINGLE or a same-account promo.
+- [ ] The client form and the client detail explain why a split promo's amount is divided in half.
+- [ ] A promo in one account appears as 2 joined tiles with one "Promo · $150 · 1 pago" label. Any promo creates 1 payment, not 2.
 - [ ] An occupied slot cannot be selected for a new client.
 - [ ] `paymentDay` defaults to the day of `startDate`.
 - [ ] With "Primer pago recibido" checked, a new client shows "Pagado" for the current period.
@@ -286,8 +307,6 @@ Responsive rules (mobile-first, Tailwind breakpoints):
 - [ ] `paymentStatus` returns `PAID` when a payment with `period = "2026-10"` exists.
 - [ ] `dueDate("2026-02", 31)` returns `2026-02-28`.
 - [ ] Registering a payment adds a row to the client's history and updates the badge without reloading.
-- [ ] Moving a SINGLE client to a free slot of another account frees the original slot and occupies the new one.
-- [ ] The move dialog does not offer accounts with fewer than 2 free slots for a promo client.
 - [ ] Cancelling a client frees their slot(s). The client and their payments are still readable in the data.
 - [ ] "Eliminar cuenta" is disabled while the account has active clients.
 - [ ] A closed account disappears from the default list and appears under "Mostrar cerradas".
@@ -318,8 +337,10 @@ Responsive rules (mobile-first, Tailwind breakpoints):
 - **Yes:** the PIN lives in `sessionStorage` until the tab closes. **No:** `localStorage`, which is riskier on a shared device.
 - **Yes:** Spotify passwords are stored as plain text in DynamoDB. Access is gated by the authorizer and DynamoDB encrypts at rest. **No:** KMS app-level encryption, which adds complexity that is not needed now.
 - **Yes:** Amplify Gen2 Data (AppSync + DynamoDB). It is already in the repo and works from a phone. **No:** `localStorage` persistence.
-- **Yes:** slots are derived from `Client.slots` instead of a `Slot` model. Fewer records. A free slot is the absence of an active client.
-- **Yes:** a promo is one client with 2 slots, 1 payer, 1 payment day and 1 payment. The second person's name and email are stored in the same record. **No:** 2 clients that share a promo.
+- **Yes:** slots are derived from `Client` (`accountId`/`slot` and `secondAccountId`/`secondSlot`) instead of a `Slot` model. Fewer records. A free slot is the absence of an active client.
+- **Yes:** a promo is one client with 2 slots, 1 payer, 1 payment day and 1 payment. The second person's name, email, account and slot are stored in the same record. **No:** 2 clients that share a promo. **No:** a list of `{account, slot}` pairs, which complicates per-account filters.
+- **Yes:** a promo can span 2 accounts. Needed to sell a promo when no single account has 2 free slots. Its income is split half and half between the 2 accounts. **No:** attributing it all to the payer's account.
+- **No:** moving clients between slots or accounts. Removed in Revision 1 as not needed; to relocate someone, cancel and register again.
 - **Yes:** amounts are pre-filled from `PRICES` and stay editable, for discounts.
 - **Yes:** manual account and slot choice. **No:** auto-suggesting the fullest account or a waitlist. The user wants to choose.
 - **Yes:** payment history per period (`YYYY-MM`). SPEC 02 needs it for monthly earnings. **No:** a single "next payment" toggle.
@@ -345,7 +366,7 @@ Responsive rules (mobile-first, Tailwind breakpoints):
 | A 6-digit PIN can be brute-forced against the authorizer | Keep the authorizer cache TTL short and never log tokens. The PIN can be rotated with `ampx secret set`. Rate limiting (AWS WAF) is out of scope and noted for later. |
 | The PIN leaks through chat, commits or screenshots | The PIN exists only as an Amplify secret. Rotate it if it is exposed. The PIN shared in this conversation should be rotated before production. |
 | Spotify passwords readable by anyone with the PIN | This is accepted by design (single admin). Rotate the PIN when sharing devices. |
-| Spotify detects members at different addresses and removes them or cancels the account | This is a business risk outside the app. A closed account keeps its history, and moving clients lets the admin relocate them fast. |
+| Spotify detects members at different addresses and removes them or cancels the account | This is a business risk outside the app. A closed account keeps its history. To relocate a client, cancel and register them again. |
 | Two writes picking the same slot | This is unlikely with one admin. Slots are re-validated against fresh data right before saving. |
 | A payment day of 29–31 in short months | `dueDate` clamps to the last day of the month. This is covered by the acceptance criteria. |
 
@@ -357,7 +378,22 @@ Responsive rules (mobile-first, Tailwind breakpoints):
 - Spotify billing alerts and a history of payments to Spotify (SPEC 02).
 - A calendar view of all due dates (SPEC 02).
 - A waitlist or an "open a new account" helper.
+- Moving clients between slots or accounts (removed in Revision 1).
 - A client portal, notifications, or any Spotify automation.
 - Multiple admins, roles, grace days, rate limiting / WAF.
 
 Each one of those, if it lands, goes in its own spec.
+
+---
+
+## Revision 1 — 2026-10-12 (during `/spec-impl`)
+
+Changes requested while implementing, after steps 1–9 were done:
+
+- **Promo across accounts.** A promo's 2 slots can be in 2 different accounts. `Client.slots` becomes `slot` + `secondAccountId` + `secondSlot`. Income is split half and half (`accountShare`), and the UI explains why. New step 10.
+- **Move removed.** The old step 10 (`MoveClientDialog`) and its acceptance criteria are removed.
+- **Client edit** is built in step 9 as `ClientEditDialog` (plan, account and slots are not editable).
+- **Duplicate payments are blocked.** A second payment for an already paid period is rejected in the form and re-checked against fresh data before saving.
+- **Next due date** is the due date of the first unpaid period from the current one on, so payments made in advance push it forward.
+- **Client detail layout:** a status-tinted `PaymentHero` (status, next due date with countdown, amount, payment day, "Registrar pago") is separated from the identity and contact cards. The phone is shown as a WhatsApp row that opens `https://wa.me/<phone>`. New soft status tokens: `status-paid-soft #E8F5EE`, `status-pending-soft #FEF6E4`, `status-overdue-soft #FDECEA` (status text on them passes AA).
+
