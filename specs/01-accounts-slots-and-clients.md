@@ -1,6 +1,6 @@
 # SPEC 01 — Family accounts, slots, clients and payments
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** none
 > **Date:** 2026-10-12
 > **Revised:** 2026-10-12 — promo across accounts, move removed (see "Revision 1")
@@ -283,47 +283,47 @@ Responsive rules (mobile-first, Tailwind breakpoints):
 
 ## Acceptance criteria
 
-- [ ] No PIN appears anywhere in the repository. `git grep` for the real PIN returns nothing.
-- [ ] A GraphQL request without a token, or with a wrong one, is rejected with Unauthorized.
-- [ ] Entering a wrong PIN shows "Código incorrecto" and does not enter the app.
-- [ ] After a correct PIN, reloading the tab keeps the session. Closing the tab and reopening the app asks for the PIN.
-- [ ] "Salir" clears `spoty:pin` and returns to `#/login`.
-- [ ] `Todo`, `amplify/auth/` and the template UI no longer exist.
-- [ ] Creating an account without a cost saves `monthlyCost = 240`.
-- [ ] `billingDay` outside 1–31 or an invalid email blocks saving with an inline error.
-- [ ] Account detail shows exactly 6 slot tiles: 1 locked admin tile and 5 sellable tiles.
-- [ ] The password is masked by default. "Mostrar" reveals it and "Copiar" puts it on the clipboard.
-- [ ] Choosing "Suelto" pre-fills `$80`. Choosing "Promo" pre-fills `$150`. Both amounts can be edited before saving.
-- [ ] A promo cannot be saved unless exactly 2 different free slots are selected: 2 in one account, or 1 in each of 2 active accounts.
-- [ ] A promo split across 2 accounts shows 1 tile in each account with "Promo compartida · $75 de $150" and a link to the other account, and it counts as occupied in both account cards.
-- [ ] `accountShare` returns `75` for each account of a split `$150` promo, `76`/`75` for `$151`, and the full amount for a SINGLE or a same-account promo.
-- [ ] The client form and the client detail explain why a split promo's amount is divided in half.
-- [ ] A promo in one account appears as 2 joined tiles with one "Promo · $150 · 1 pago" label. Any promo creates 1 payment, not 2.
-- [ ] An occupied slot cannot be selected for a new client.
-- [ ] `paymentDay` defaults to the day of `startDate`.
-- [ ] With "Primer pago recibido" checked, a new client shows "Pagado" for the current period.
-- [ ] `paymentStatus` returns `PENDING` for `paymentDay = 20`, `today = 2026-10-12` and no payment.
-- [ ] `paymentStatus` returns `OVERDUE` for `paymentDay = 10`, `today = 2026-10-12` and no payment.
-- [ ] `paymentStatus` returns `PAID` when a payment with `period = "2026-10"` exists.
-- [ ] `dueDate("2026-02", 31)` returns `2026-02-28`.
-- [ ] Registering a payment adds a row to the client's history and updates the badge without reloading.
-- [ ] Cancelling a client frees their slot(s). The client and their payments are still readable in the data.
-- [ ] "Eliminar cuenta" is disabled while the account has active clients.
-- [ ] A closed account disappears from the default list and appears under "Mostrar cerradas".
-- [ ] Every status badge shows an icon and a text label, not color alone.
-- [ ] Text/background pairs used in the theme pass WCAG AA (≥ 4.5:1 for normal text), verified with a contrast checker.
-- [ ] At 360px width no screen has horizontal scroll.
-- [ ] No `<table>` element exists in `src/` (`git grep "<table" src/` returns nothing).
-- [ ] At < 640px a bottom tab bar is visible and the sidebar is hidden. At ≥ 1024px the sidebar is visible and the bottom tab bar is hidden.
-- [ ] The slot grid renders 2 columns at 360px, 3 at 768px and 6 at 1280px.
-- [ ] At < 640px dialogs open as bottom sheets. At ≥ 640px they open as centered modals.
-- [ ] Plan type is selected through 2 cards, and slots are selected by tapping tiles. Neither uses a `<select>`.
-- [ ] Payment history renders as a timeline, newest first.
-- [ ] Each account card shows an occupancy progress bar and 6 slot dots.
-- [ ] Tapping the phone chip opens `https://wa.me/<phone>`.
-- [ ] Every interactive element is at least 44×44px at phone width.
-- [ ] All UI strings are in Spanish. All identifiers and file names are in English.
-- [ ] `pnpm build` (`tsc && vite build`) and `pnpm lint` pass with no errors.
+- [x] No PIN appears anywhere in the repository. `git grep` for the real PIN returns nothing.
+- [x] A GraphQL request without a token, or with a wrong one, is rejected with Unauthorized.
+- [x] Entering a wrong PIN shows "Código incorrecto" and does not enter the app.
+- [x] After a correct PIN, reloading the tab keeps the session. Closing the tab and reopening the app asks for the PIN.
+- [x] "Salir" clears `spoty:pin` and returns to `#/login`.
+- [x] `Todo`, `amplify/auth/` and the template UI no longer exist.
+- [x] Creating an account without a cost saves `monthlyCost = 240`.
+- [x] `billingDay` outside 1–31 or an invalid email blocks saving with an inline error.
+- [x] Account detail shows exactly 6 slot tiles: 1 locked admin tile and 5 sellable tiles.
+- [x] The password is masked by default. "Mostrar" reveals it and "Copiar" puts it on the clipboard.
+- [x] Choosing "Suelto" pre-fills `$80`. Choosing "Promo" pre-fills `$150`. Both amounts can be edited before saving.
+- [x] A promo cannot be saved unless exactly 2 different free slots are selected: 2 in one account, or 1 in each of 2 active accounts.
+- [x] A promo split across 2 accounts shows 1 tile in each account with "Promo compartida · $75 de $150" and a link to the other account, and it counts as occupied in both account cards.
+- [x] `accountShare` returns `75` for each account of a split `$150` promo, `76`/`75` for `$151`, and the full amount for a SINGLE or a same-account promo.
+- [x] The client form and the client detail explain why a split promo's amount is divided in half.
+- [x] A promo in one account appears as 2 joined tiles with one "Promo · $150 · 1 pago" label. Any promo creates 1 payment, not 2.
+- [x] An occupied slot cannot be selected for a new client.
+- [x] `paymentDay` defaults to the day of `startDate`.
+- [x] With "Primer pago recibido" checked, a new client shows "Pagado" for the current period.
+- [x] `paymentStatus` returns `PENDING` for `paymentDay = 20`, `today = 2026-10-12` and no payment.
+- [x] `paymentStatus` returns `OVERDUE` for `paymentDay = 10`, `today = 2026-10-12` and no payment.
+- [x] `paymentStatus` returns `PAID` when a payment with `period = "2026-10"` exists.
+- [x] `dueDate("2026-02", 31)` returns `2026-02-28`.
+- [x] Registering a payment adds a row to the client's history and updates the badge without reloading.
+- [x] Cancelling a client frees their slot(s). The client and their payments are still readable in the data.
+- [x] "Eliminar cuenta" is disabled while the account has active clients.
+- [x] A closed account disappears from the default list and appears under "Mostrar cerradas".
+- [x] Every status badge shows an icon and a text label, not color alone.
+- [x] Text/background pairs used in the theme pass WCAG AA (≥ 4.5:1 for normal text), verified with a contrast checker.
+- [x] At 360px width no screen has horizontal scroll.
+- [x] No `<table>` element exists in `src/` (`git grep "<table" src/` returns nothing).
+- [x] At < 640px a bottom tab bar is visible and the sidebar is hidden. At ≥ 1024px the sidebar is visible and the bottom tab bar is hidden.
+- [x] The slot grid renders 2 columns at 360px, 3 at 768px and 6 at 1280px.
+- [x] At < 640px dialogs open as bottom sheets. At ≥ 640px they open as centered modals.
+- [x] Plan type is selected through 2 cards, and slots are selected by tapping tiles. Neither uses a `<select>`.
+- [x] Payment history renders as a timeline, newest first.
+- [x] Each account card shows an occupancy progress bar and 6 slot dots.
+- [x] Tapping the phone chip opens `https://wa.me/<phone>`.
+- [x] Every interactive element is at least 44×44px at phone width.
+- [x] All UI strings are in Spanish. All identifiers and file names are in English.
+- [x] `pnpm build` (`tsc && vite build`) and `pnpm lint` pass with no errors.
 
 ---
 
