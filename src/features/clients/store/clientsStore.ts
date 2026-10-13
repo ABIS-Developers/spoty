@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { areSlotsFree } from "../../accounts";
 import { clientsApi, type Client, type ClientInput } from "../api/clientsApi";
+import { isAssignmentFree } from "../lib/assignment";
 
 type LoadStatus = "idle" | "loading" | "ready" | "error";
 
@@ -41,8 +41,9 @@ export const useClientsStore = create<ClientsState>((set) => ({
   },
 
   create: async (input) => {
-    const fresh = await clientsApi.listByAccount(input.accountId);
-    if (!areSlotsFree(input.slots, { id: input.accountId }, fresh)) throw new SlotsTakenError();
+    const accountIds = [input.accountId, ...(input.secondAccountId ? [input.secondAccountId] : [])];
+    const fresh = await clientsApi.listByAccounts(accountIds);
+    if (!isAssignmentFree(input, fresh)) throw new SlotsTakenError();
     const client = await clientsApi.create(input);
     set((state) => ({ clients: upsert(state.clients, client) }));
     return client;

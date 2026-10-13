@@ -1,12 +1,17 @@
 import { getDate } from "date-fns";
 import { parseISODate } from "../../../shared/lib/dates";
 import type { Client, ClientInput } from "../api/clientsApi";
-import { PRICES, SLOTS_BY_PLAN, type PlanType } from "./pricing";
+import { PRICES, type PlanType } from "./pricing";
 import { clientsTexts } from "../texts";
 
 export type ClientFormValues = {
   planType: PlanType;
-  slots: number[];
+  /** Person 1 (payer) slot in the form's account. */
+  slot: number | null;
+  /** PROMO only: account of person 2's slot; starts as the form's account. */
+  secondAccountId: string;
+  /** PROMO only: person 2 slot in `secondAccountId`. */
+  secondSlot: number | null;
   name: string;
   phone: string;
   spotifyEmail: string;
@@ -24,10 +29,12 @@ export type ClientFormErrors = Partial<Record<keyof ClientFormValues, string>>;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function emptyClientForm(startDate: string, slot: number | null): ClientFormValues {
+export function emptyClientForm(startDate: string, accountId: string, slot: number | null): ClientFormValues {
   return {
     planType: "SINGLE",
-    slots: slot === null ? [] : [slot],
+    slot,
+    secondAccountId: accountId,
+    secondSlot: null,
     name: "",
     phone: "",
     spotifyEmail: "",
@@ -41,19 +48,22 @@ export function emptyClientForm(startDate: string, slot: number | null): ClientF
   };
 }
 
-/** Taps a slot: SINGLE keeps one, PROMO keeps the last two. Tapping a selected slot clears it. */
-export function toggleSlot(selected: ReadonlyArray<number>, slot: number, planType: PlanType): number[] {
-  if (selected.includes(slot)) return selected.filter((item) => item !== slot);
-  return [...selected, slot].slice(-SLOTS_BY_PLAN[planType]);
+/** Tapping the selected slot clears it; any other slot replaces it. */
+export function toggleSingleSlot(selected: number | null, slot: number): number | null {
+  return selected === slot ? null : slot;
 }
 
-export function validateClientForm(values: ClientFormValues): ClientFormErrors {
+export function validateClientForm(values: ClientFormValues, accountId: string): ClientFormErrors {
   const errors: ClientFormErrors = {};
   const { errors: texts } = clientsTexts.form;
   const isPromo = values.planType === "PROMO";
 
-  if (values.slots.length !== SLOTS_BY_PLAN[values.planType]) {
-    errors.slots = isPromo ? texts.promoSlots : texts.singleSlot;
+  if (values.slot === null) errors.slot = texts.slotRequired;
+  if (isPromo) {
+    if (values.secondSlot === null) errors.secondSlot = texts.secondSlotRequired;
+    else if (values.secondAccountId === accountId && values.secondSlot === values.slot) {
+      errors.secondSlot = texts.sameSlot;
+    }
   }
   if (!values.name.trim()) errors.name = texts.nameRequired;
   if (values.spotifyEmail.trim() && !EMAIL_PATTERN.test(values.spotifyEmail.trim())) {
@@ -84,7 +94,9 @@ export function toClientInput(accountId: string, values: ClientFormValues): Clie
     paymentDay: values.paymentDay ?? 1,
     planType: values.planType,
     amount: Number(values.amount.trim()),
-    slots: [...values.slots].sort((a, b) => a - b),
+    slot: values.slot ?? 0,
+    secondAccountId: isPromo ? values.secondAccountId : null,
+    secondSlot: isPromo ? values.secondSlot : null,
     secondName: isPromo ? optional(values.secondName) : null,
     secondSpotifyEmail: isPromo ? optional(values.secondSpotifyEmail) : null,
   };
@@ -94,7 +106,9 @@ export function toClientInput(accountId: string, values: ClientFormValues): Clie
 export function clientFormFrom(client: Client): ClientFormValues {
   return {
     planType: client.planType,
-    slots: client.slots,
+    slot: client.slot,
+    secondAccountId: client.secondAccountId ?? client.accountId,
+    secondSlot: client.secondSlot,
     name: client.name,
     phone: client.phone ?? "",
     spotifyEmail: client.spotifyEmail ?? "",
@@ -108,7 +122,7 @@ export function clientFormFrom(client: Client): ClientFormValues {
   };
 }
 
-/** Editable fields only; plan, account and slots change through "move". */
+/** Editable fields only; plan, accounts and slots are fixed after registration. */
 export function toClientUpdate(values: ClientFormValues): Partial<ClientInput> {
   const input = toClientInput("", values);
   return {

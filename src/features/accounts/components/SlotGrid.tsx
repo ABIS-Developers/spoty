@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CalendarDays, Lock, UserPlus, Users } from "lucide-react";
+import { CalendarDays, Link2, Lock, UserPlus, Users } from "lucide-react";
 import { Avatar, StatusBadge } from "../../../shared/components";
 import { formatDisplayDate } from "../../../shared/lib/dates";
 import { formatMoney } from "../../../shared/lib/money";
@@ -11,6 +11,10 @@ export type SlotTileOccupant = {
   id: string;
   name: string;
   amount: number;
+  /** Part of `amount` attributed to this account (half of a split promo). */
+  share: number;
+  /** Other account of a promo split across 2 accounts. */
+  sharedWith: { accountId: string; alias: string } | null;
   planType: "SINGLE" | "PROMO";
   slots: number[];
   status: OccupantStatus | null;
@@ -90,11 +94,17 @@ export function SlotGrid({ accountId, occupants }: SlotGridProps) {
 function OccupiedTile({ occupant }: { occupant: SlotTileOccupant }) {
   const { slots: texts } = accountsTexts;
   const isPromo = occupant.planType === "PROMO";
+  const { sharedWith } = occupant;
+
+  const planLabel = sharedWith
+    ? `${texts.sharedPromo} · ${formatMoney(occupant.share)} ${texts.of} ${formatMoney(occupant.amount)}`
+    : isPromo
+      ? `${texts.promo} · ${formatMoney(occupant.amount)} · ${texts.onePayment}`
+      : formatMoney(occupant.amount);
 
   return (
-    <Link
-      to={`/clients/${occupant.id}`}
-      className={`${TILE} h-full gap-3 border-2 bg-white transition-shadow duration-200 hover:shadow-md ${
+    <div
+      className={`relative ${TILE} h-full gap-3 border-2 bg-white transition-shadow duration-200 hover:shadow-md ${
         isPromo ? "border-olive-700" : "border-beige-300"
       }`}
     >
@@ -104,15 +114,25 @@ function OccupiedTile({ occupant }: { occupant: SlotTileOccupant }) {
       </div>
       <div className="flex min-w-0 items-center gap-2">
         <Avatar name={occupant.name} />
-        <span className="truncate font-semibold" title={occupant.name}>
+        {/* Stretched link: the whole tile opens the client; the shared-account link sits above it. */}
+        <Link
+          to={`/clients/${occupant.id}`}
+          className="truncate font-semibold after:absolute after:inset-0 after:rounded-2xl after:content-['']"
+          title={occupant.name}
+        >
           {occupant.name}
-        </span>
+        </Link>
       </div>
-      <p className="text-sm font-medium">
-        {isPromo
-          ? `${texts.promo} · ${formatMoney(occupant.amount)} · ${texts.onePayment}`
-          : formatMoney(occupant.amount)}
-      </p>
+      <p className="text-sm font-medium">{planLabel}</p>
+      {sharedWith && (
+        <Link
+          to={`/accounts/${sharedWith.accountId}`}
+          className="relative z-[1] -my-2 inline-flex min-h-11 items-center gap-1.5 self-start rounded-lg text-sm font-medium text-olive-700 underline-offset-2 hover:underline"
+        >
+          <Link2 aria-hidden="true" className="size-4 shrink-0" />
+          {texts.with} {sharedWith.alias}
+        </Link>
+      )}
       <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
         {occupant.nextDueDate && (
           <span className="flex items-center gap-1 text-sm text-olive-700">
@@ -122,6 +142,6 @@ function OccupiedTile({ occupant }: { occupant: SlotTileOccupant }) {
         )}
         {occupant.status && <StatusBadge status={occupant.status} />}
       </div>
-    </Link>
+    </div>
   );
 }

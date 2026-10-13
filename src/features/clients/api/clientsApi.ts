@@ -15,7 +15,12 @@ export type Client = {
   paymentDay: number;
   planType: PlanType;
   amount: number;
-  slots: number[];
+  /** Person 1 (payer) slot in `accountId`. */
+  slot: number;
+  /** PROMO only; equals `accountId` when both slots are in one account. */
+  secondAccountId: string | null;
+  /** PROMO only; person 2 slot in `secondAccountId`. */
+  secondSlot: number | null;
   secondName: string | null;
   secondSpotifyEmail: string | null;
   status: ClientStatus;
@@ -35,16 +40,16 @@ const CLIENT_FIELDS = [
   "paymentDay",
   "planType",
   "amount",
-  "slots",
+  "slot",
+  "secondAccountId",
+  "secondSlot",
   "secondName",
   "secondSpotifyEmail",
   "status",
   "cancelledAt",
 ] as const;
 
-type ClientRecord = {
-  [K in keyof Client]: K extends "slots" ? ReadonlyArray<number | null> | null : Client[K] | null;
-};
+type ClientRecord = { [K in keyof Client]: Client[K] | null };
 
 function toClient(record: ClientRecord): Client {
   return {
@@ -58,7 +63,9 @@ function toClient(record: ClientRecord): Client {
     paymentDay: record.paymentDay ?? 1,
     planType: record.planType ?? "SINGLE",
     amount: record.amount ?? 0,
-    slots: (record.slots ?? []).filter((slot): slot is number => slot !== null),
+    slot: record.slot ?? 0,
+    secondAccountId: record.secondAccountId ?? null,
+    secondSlot: record.secondSlot ?? null,
     secondName: record.secondName ?? null,
     secondSpotifyEmail: record.secondSpotifyEmail ?? null,
     status: record.status ?? "ACTIVE",
@@ -79,11 +86,14 @@ export const clientsApi = {
     return records.map(toClient);
   },
 
-  /** Fresh clients of one account, to re-validate slots right before saving. */
-  async listByAccount(accountId: string): Promise<Client[]> {
+  /** Fresh clients holding any slot of the given accounts, to re-validate slots right before saving. */
+  async listByAccounts(accountIds: ReadonlyArray<string>): Promise<Client[]> {
+    const ids = [...new Set(accountIds)];
     const records = await listAll((nextToken) =>
       getDataClient().models.Client.list({
-        filter: { accountId: { eq: accountId } },
+        filter: {
+          or: ids.flatMap((id) => [{ accountId: { eq: id } }, { secondAccountId: { eq: id } }]),
+        },
         selectionSet: CLIENT_FIELDS,
         limit: 1000,
         nextToken,

@@ -22,6 +22,7 @@ export function AccountsPage() {
     void load();
   }, [load]);
 
+  const aliases = new Map(accounts.map((account) => [account.id, account.alias]));
   const visible = accounts
     .filter((account) => account.status === "ACTIVE")
     .sort((a, b) => a.alias.localeCompare(b.alias, "es", { numeric: true }));
@@ -64,7 +65,7 @@ export function AccountsPage() {
             <li key={account.id}>
               <AccountCard
                 account={account}
-                occupants={buildOccupants(account.id, clients, payments, today)}
+                occupants={buildOccupants(account.id, clients, payments, today, aliases)}
                 today={today}
               />
             </li>

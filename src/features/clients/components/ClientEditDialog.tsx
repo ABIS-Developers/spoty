@@ -51,7 +51,7 @@ function ClientEditBody({ client, onClose }: Omit<ClientEditDialogProps, "open">
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const nextErrors = validateClientForm(values);
+    const nextErrors = validateClientForm(values, client.accountId);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 

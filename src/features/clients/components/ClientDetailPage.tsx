@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ChevronRight,
   History,
+  Info,
   LayoutGrid,
   Mail,
   MessageCircle,
@@ -18,11 +19,13 @@ import {
 } from "lucide-react";
 import { Avatar, Button, Chip, CopyButton, EmptyState, PageSpinner } from "../../../shared/components";
 import { formatDisplayDate } from "../../../shared/lib/dates";
-import { useAccountsStore } from "../../accounts";
+import { isSplitPromo, slotsInAccount, useAccountsStore } from "../../accounts";
 import { currentPeriod, MonthStrip, PaymentForm, PaymentHistory, paymentStatus } from "../../payments";
 import { useClientsData } from "../hooks/useClientsData";
 import { daysUntil, nextDueDate } from "../lib/occupants";
+import { accountShare } from "../lib/revenue";
 import { whatsappUrl } from "../lib/whatsapp";
+import { formatMoney } from "../../../shared/lib/money";
 import { clientsTexts } from "../texts";
 import { ClientEditDialog } from "./ClientEditDialog";
 import { PaymentHero } from "./PaymentHero";
@@ -121,7 +124,11 @@ export function ClientDetailPage() {
   const isPromo = client.planType === "PROMO";
   const nextDue = isActive ? nextDueDate(client, clientPayments, today) : null;
   const waUrl = whatsappUrl(client.phone);
-  const slotsLabel = `${detail.slot} ${client.slots.join(` ${detail.slotsJoin} `)}`;
+  const isSplit = isSplitPromo(client);
+  const secondAccount = client.secondAccountId
+    ? accounts.find((item) => item.id === client.secondAccountId)
+    : undefined;
+  const slotsLabel = `${detail.slot} ${slotsInAccount(client, client.accountId).join(` ${detail.slotsJoin} `)}`;
   const hasContact = Boolean(waUrl || client.spotifyEmail || (isPromo && (client.secondName || client.secondSpotifyEmail)));
 
   return (
@@ -153,7 +160,29 @@ export function ClientDetailPage() {
                   {account.alias} · {slotsLabel}
                 </Chip>
               )}
+              {isSplit && secondAccount && client.secondSlot !== null && (
+                <Chip icon={LayoutGrid} href={`#/accounts/${secondAccount.id}`}>
+                  {secondAccount.alias} · {detail.slot} {client.secondSlot}
+                </Chip>
+              )}
             </div>
+            {isSplit && (
+              <div className="flex gap-3 rounded-xl border border-olive-700 bg-olive-100 p-3">
+                <Info aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-olive-700" />
+                <div>
+                  <p className="font-semibold">{detail.splitTitle}</p>
+                  <p className="text-sm text-olive-950">
+                    {clientsTexts.form.splitExplanation(
+                      formatMoney(client.amount),
+                      formatMoney(accountShare(client, client.accountId)),
+                      account?.alias ?? "",
+                      formatMoney(accountShare(client, client.secondAccountId ?? "")),
+                      secondAccount?.alias ?? "",
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
           </section>
 
           <div className="order-3 flex flex-col gap-4 lg:order-none lg:gap-6">

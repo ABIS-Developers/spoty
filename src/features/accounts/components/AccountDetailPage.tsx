@@ -27,7 +27,8 @@ function Fact({ icon: Icon, label, children }: { icon: LucideIcon; label: string
 
 export function AccountDetailPage() {
   const { id = "" } = useParams();
-  const account = useAccountsStore((state) => state.accounts.find((item) => item.id === id));
+  const accounts = useAccountsStore((state) => state.accounts);
+  const account = accounts.find((item) => item.id === id);
   const status = useAccountsStore((state) => state.status);
   const load = useAccountsStore((state) => state.load);
   const { clients, payments, status: clientsStatus, retry } = useClientsData();
@@ -125,7 +126,16 @@ export function AccountDetailPage() {
       ) : clientsStatus !== "ready" && clients.length === 0 ? (
         <PageSpinner />
       ) : (
-        <SlotGrid accountId={account.id} occupants={buildOccupants(account.id, clients, payments, today)} />
+        <SlotGrid
+          accountId={account.id}
+          occupants={buildOccupants(
+            account.id,
+            clients,
+            payments,
+            today,
+            new Map(accounts.map((item) => [item.id, item.alias])),
+          )}
+        />
       )}
 
       <AccountForm open={editOpen} onClose={() => setEditOpen(false)} account={account} />

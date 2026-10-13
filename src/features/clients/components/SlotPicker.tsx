@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { AlertTriangle, CheckCircle2, Lock, UserPlus } from "lucide-react";
 import { sellableSlots } from "../../accounts";
 import { clientsTexts } from "../texts";
@@ -15,10 +16,11 @@ type SlotPickerProps = {
 /** Mini slot grid: tap free tiles to pick them. */
 export function SlotPicker({ taken, selected, onToggle, label, hint, error }: SlotPickerProps) {
   const { form } = clientsTexts;
+  const helpId = useId();
   const tile = "flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl p-2 text-center text-sm";
 
   return (
-    <div role="group" aria-label={label} aria-describedby="slot-picker-help" className="flex flex-col gap-2">
+    <div role="group" aria-label={label} aria-describedby={helpId} className="flex flex-col gap-2">
       <ul className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         <li>
           <div className={`${tile} h-full bg-olive-900 text-white`}>
@@ -72,7 +74,7 @@ export function SlotPicker({ taken, selected, onToggle, label, hint, error }: Sl
           );
         })}
       </ul>
-      <div id="slot-picker-help">
+      <div id={helpId}>
         {error ? (
           <p role="alert" className="flex items-center gap-1.5 text-sm text-status-overdue">
             <AlertTriangle aria-hidden="true" className="size-4 shrink-0" />

@@ -15,7 +15,8 @@ const schema = a.schema({
       monthlyCost: a.integer().required(), // default 240
       status: a.ref("AccountStatus").required(),
       notes: a.string(),
-      clients: a.hasMany("Client", "accountId"),
+      clients: a.hasMany("Client", "accountId"), // person 1 (payer) slots
+      secondClients: a.hasMany("Client", "secondAccountId"), // person 2 slots of promos
     })
     .authorization((allow) => [allow.custom()]),
 
@@ -31,7 +32,10 @@ const schema = a.schema({
       paymentDay: a.integer().required(), // 1–31, default = day of startDate
       planType: a.ref("PlanType").required(),
       amount: a.integer().required(), // monthly, default from PRICES
-      slots: a.integer().array().required(), // [n] for SINGLE, [n, m] for PROMO; values 1–5
+      slot: a.integer().required(), // person 1 slot in accountId; 1–5
+      secondAccountId: a.id(), // PROMO only; equals accountId when both slots are in one account
+      secondAccount: a.belongsTo("Account", "secondAccountId"),
+      secondSlot: a.integer(), // PROMO only; person 2 slot in secondAccountId; 1–5
       secondName: a.string(), // PROMO only
       secondSpotifyEmail: a.email(), // PROMO only
       status: a.ref("ClientStatus").required(),
