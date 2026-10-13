@@ -38,3 +38,22 @@ export function areSlotsFree(
   const free = new Set(freeSlots(account, clients));
   return new Set(selected).size === selected.length && selected.every((slot) => free.has(slot));
 }
+
+export type OccupantStatus = "PAID" | "PENDING" | "OVERDUE";
+
+/** An ACTIVE client as the slot views need it. */
+export type SlotOccupant = {
+  slots: ReadonlyArray<number | null>;
+  status: OccupantStatus | null;
+};
+
+/** Status shown on each sellable slot; `undefined` means free. */
+export function slotStatuses(occupants: ReadonlyArray<SlotOccupant>): Map<number, OccupantStatus | null> {
+  const statuses = new Map<number, OccupantStatus | null>();
+  for (const occupant of occupants) {
+    for (const slot of occupant.slots) {
+      if (slot !== null) statuses.set(slot, occupant.status);
+    }
+  }
+  return statuses;
+}
