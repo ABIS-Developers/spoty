@@ -25,6 +25,8 @@ export type SlotTileOccupant = {
 type SlotGridProps = {
   accountId: string;
   occupants: ReadonlyArray<SlotTileOccupant>;
+  /** Closed accounts: free tiles cannot be assigned. */
+  readOnly?: boolean;
 };
 
 type Unit = { kind: "free"; slot: number } | { kind: "occupied"; occupant: SlotTileOccupant };
@@ -54,7 +56,7 @@ function slotsLabel(slots: number[]): string {
 
 const TILE = "flex min-h-36 flex-col rounded-2xl p-4";
 
-export function SlotGrid({ accountId, occupants }: SlotGridProps) {
+export function SlotGrid({ accountId, occupants, readOnly = false }: SlotGridProps) {
   const { slots: texts } = accountsTexts;
 
   return (
@@ -68,7 +70,18 @@ export function SlotGrid({ accountId, occupants }: SlotGridProps) {
       </li>
 
       {buildUnits(occupants).map((unit) =>
-        unit.kind === "free" ? (
+        unit.kind === "free" && readOnly ? (
+          <li key={`free-${unit.slot}`}>
+            <div
+              className={`${TILE} h-full items-center justify-center gap-2 border-2 border-dashed border-beige-300 bg-beige-100 text-center text-olive-700`}
+            >
+              <span className="text-sm">
+                {texts.slot} {unit.slot} · {texts.free}
+              </span>
+              <span className="text-sm font-medium">{texts.closedSlot}</span>
+            </div>
+          </li>
+        ) : unit.kind === "free" ? (
           <li key={`free-${unit.slot}`}>
             <Link
               to={`/accounts/${accountId}/clients/new?slot=${unit.slot}`}

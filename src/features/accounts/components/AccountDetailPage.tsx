@@ -1,12 +1,25 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, CalendarDays, Mail, Pencil, SearchX, StickyNote, Wallet, type LucideIcon } from "lucide-react";
-import { Button, CopyButton, EmptyState, PageSpinner } from "../../../shared/components";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  AlertTriangle,
+  Archive,
+  ArrowLeft,
+  CalendarDays,
+  Mail,
+  Pencil,
+  SearchX,
+  StickyNote,
+  Trash2,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import { Button, ConfirmDialog, CopyButton, EmptyState, PageSpinner } from "../../../shared/components";
 import { formatDisplayDate } from "../../../shared/lib/dates";
 import { formatMoney } from "../../../shared/lib/money";
 import { sharedTexts } from "../../../shared/texts";
 import { buildOccupants, useClientsData } from "../../clients";
 import { nextBillingDate } from "../lib/billing";
+import { slotsInAccount } from "../lib/slots";
 import { useAccountsStore } from "../store/accountsStore";
 import { accountsTexts } from "../texts";
 import { AccountForm } from "./AccountForm";
@@ -32,7 +45,10 @@ export function AccountDetailPage() {
   const status = useAccountsStore((state) => state.status);
   const load = useAccountsStore((state) => state.load);
   const { clients, payments, status: clientsStatus, retry } = useClientsData();
+  const closeAccount = useAccountsStore((state) => state.close);
+  const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
+  const [closeOpen, setCloseOpen] = useState(false);
   const [today] = useState(() => new Date());
   const { detail } = accountsTexts;
 
@@ -60,13 +76,26 @@ export function AccountDetailPage() {
     );
   }
 
+  const isClosed = account.status === "CLOSED";
+  const activeClients = clients.filter(
+    (client) => client.status === "ACTIVE" && slotsInAccount(client, account.id).length > 0,
+  ).length;
+
   return (
     <>
       {backLink}
 
       <section className="rounded-2xl border border-beige-300 bg-white p-4 shadow-sm sm:p-6">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight">{account.alias}</h1>
+          <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold tracking-tight">
+            <span className="truncate">{account.alias}</span>
+            {isClosed && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-beige-100 px-2.5 py-1 text-sm font-medium text-olive-700">
+                <Archive aria-hidden="true" className="size-4" />
+                {detail.closed}
+              </span>
+            )}
+          </h1>
           <Button variant="secondary" icon={Pencil} onClick={() => setEditOpen(true)}>
             {detail.edit}
           </Button>
@@ -128,6 +157,7 @@ export function AccountDetailPage() {
       ) : (
         <SlotGrid
           accountId={account.id}
+          readOnly={isClosed}
           occupants={buildOccupants(
             account.id,
             clients,
@@ -138,7 +168,37 @@ export function AccountDetailPage() {
         />
       )}
 
+      {!isClosed && (
+        <section className="mt-8 flex flex-col gap-3 rounded-2xl border border-status-overdue/40 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <p className={`text-sm ${activeClients > 0 ? "font-medium text-status-overdue" : "text-olive-700"}`}>
+            {activeClients > 0 ? detail.closeBlocked(activeClients) : detail.closeHint}
+          </p>
+          <Button
+            variant="danger"
+            icon={Trash2}
+            onClick={() => setCloseOpen(true)}
+            disabled={activeClients > 0 || clientsStatus !== "ready"}
+            className="shrink-0"
+          >
+            {detail.closeAccount}
+          </Button>
+        </section>
+      )}
+
       <AccountForm open={editOpen} onClose={() => setEditOpen(false)} account={account} />
+      <ConfirmDialog
+        open={closeOpen}
+        onClose={() => setCloseOpen(false)}
+        title={detail.closeTitle}
+        message={detail.closeMessage(account.alias)}
+        confirmLabel={detail.closeAccount}
+        destructive
+        errorMessage={detail.closeError}
+        onConfirm={async () => {
+          await closeAccount(account.id);
+          navigate("/accounts");
+        }}
+      />
     </>
   );
 }

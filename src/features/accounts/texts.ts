@@ -6,6 +6,9 @@ export const accountsTexts = {
     retry: "Reintentar",
     emptyTitle: "Aún no hay cuentas",
     emptyDescription: "Registra tu primera cuenta familiar de Spotify para empezar a asignar clientes.",
+    showClosed: "Mostrar cerradas",
+    closedTitle: "Cerradas",
+    noClosed: "No hay cuentas cerradas.",
   },
   card: {
     occupancy: "Espacios ocupados",
@@ -35,6 +38,17 @@ export const accountsTexts = {
     notes: "Notas",
     edit: "Editar",
     slotsTitle: "Espacios",
+    closed: "Cerrada",
+    closeAccount: "Eliminar cuenta",
+    closeHint: "La cuenta se cierra y se oculta de la lista; su historial se conserva.",
+    closeBlocked: (count: number) =>
+      count === 1
+        ? "Tiene 1 cliente activo. Dalo de baja antes de eliminar la cuenta."
+        : `Tiene ${count} clientes activos. Dalos de baja antes de eliminar la cuenta.`,
+    closeTitle: "¿Eliminar esta cuenta?",
+    closeMessage: (alias: string) =>
+      `${alias} se marcará como cerrada y dejará de aparecer en la lista. Podrás verla con "Mostrar cerradas" y su historial se conserva.`,
+    closeError: "No se pudo eliminar la cuenta. Intenta de nuevo.",
     slotsLoadError: "No se pudieron cargar los clientes.",
     retry: "Reintentar",
   },
@@ -43,6 +57,7 @@ export const accountsTexts = {
     adminHint: "Espacio fijo del administrador",
     free: "Libre",
     assign: "Asignar",
+    closedSlot: "Cuenta cerrada",
     slot: "Espacio",
     slotsJoin: "y",
     promo: "Promo",

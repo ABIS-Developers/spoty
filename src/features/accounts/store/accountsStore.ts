@@ -10,6 +10,8 @@ type AccountsState = {
   /** Throws on failure so the form can show the error inline. */
   create: (input: AccountInput) => Promise<Account>;
   update: (id: string, input: Partial<AccountInput>) => Promise<Account>;
+  /** Soft close: `status: CLOSED`; history is kept. */
+  close: (id: string) => Promise<Account>;
 };
 
 function upsert(accounts: Account[], account: Account): Account[] {
@@ -39,6 +41,12 @@ export const useAccountsStore = create<AccountsState>((set) => ({
 
   update: async (id, input) => {
     const account = await accountsApi.update(id, input);
+    set((state) => ({ accounts: upsert(state.accounts, account) }));
+    return account;
+  },
+
+  close: async (id) => {
+    const account = await accountsApi.update(id, { status: "CLOSED" });
     set((state) => ({ accounts: upsert(state.accounts, account) }));
     return account;
   },

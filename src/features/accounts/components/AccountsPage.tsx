@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Plus, Users } from "lucide-react";
+import { AlertTriangle, Archive, Plus, Users } from "lucide-react";
 import { Button, EmptyState, PageSpinner } from "../../../shared/components";
 import { buildOccupants, useClientsData } from "../../clients";
 import { useAccountsStore } from "../store/accountsStore";
@@ -15,6 +15,7 @@ export function AccountsPage() {
   const navigate = useNavigate();
   const { clients, payments } = useClientsData();
   const [formOpen, setFormOpen] = useState(false);
+  const [showClosed, setShowClosed] = useState(false);
   const [today] = useState(() => new Date());
   const { page } = accountsTexts;
 
@@ -23,9 +24,22 @@ export function AccountsPage() {
   }, [load]);
 
   const aliases = new Map(accounts.map((account) => [account.id, account.alias]));
-  const visible = accounts
-    .filter((account) => account.status === "ACTIVE")
-    .sort((a, b) => a.alias.localeCompare(b.alias, "es", { numeric: true }));
+  const byAlias = (a: { alias: string }, b: { alias: string }) => a.alias.localeCompare(b.alias, "es", { numeric: true });
+  const visible = accounts.filter((account) => account.status === "ACTIVE").sort(byAlias);
+  const closed = accounts.filter((account) => account.status === "CLOSED").sort(byAlias);
+  const renderCards = (list: typeof accounts) => (
+    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {list.map((account) => (
+        <li key={account.id}>
+          <AccountCard
+            account={account}
+            occupants={buildOccupants(account.id, clients, payments, today, aliases)}
+            today={today}
+          />
+        </li>
+      ))}
+    </ul>
+  );
 
   return (
     <>
@@ -35,6 +49,20 @@ export function AccountsPage() {
           {page.newAccount}
         </Button>
       </div>
+
+      {closed.length > 0 && (
+        <button
+          type="button"
+          aria-pressed={showClosed}
+          onClick={() => setShowClosed((current) => !current)}
+          className={`mb-4 inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors duration-150 ${
+            showClosed ? "border-olive-700 bg-olive-100 text-olive-950" : "border-beige-300 bg-white text-olive-700 hover:bg-beige-100"
+          }`}
+        >
+          <Archive aria-hidden="true" className="size-4" />
+          {page.showClosed} ({closed.length})
+        </button>
+      )}
 
       {status === "error" ? (
         <div role="alert" className="flex flex-col items-center gap-3 rounded-2xl bg-white p-6 text-center">
@@ -60,17 +88,17 @@ export function AccountsPage() {
           }
         />
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {visible.map((account) => (
-            <li key={account.id}>
-              <AccountCard
-                account={account}
-                occupants={buildOccupants(account.id, clients, payments, today, aliases)}
-                today={today}
-              />
-            </li>
-          ))}
-        </ul>
+        renderCards(visible)
+      )}
+
+      {showClosed && closed.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-olive-700">
+            <Archive aria-hidden="true" className="size-5" />
+            {page.closedTitle}
+          </h2>
+          {renderCards(closed)}
+        </section>
       )}
 
       <button

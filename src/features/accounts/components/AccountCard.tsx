@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CalendarDays, ChevronRight, Mail } from "lucide-react";
+import { Archive, CalendarDays, ChevronRight, Mail } from "lucide-react";
 import { ProgressBar } from "../../../shared/components";
 import { formatDisplayDate } from "../../../shared/lib/dates";
 import { formatMoney } from "../../../shared/lib/money";
@@ -27,7 +27,15 @@ export function AccountCard({ account, occupants, today }: AccountCardProps) {
     >
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-lg font-semibold">{account.alias}</h2>
+          <h2 className="flex min-w-0 items-center gap-2 text-lg font-semibold">
+            <span className="truncate">{account.alias}</span>
+            {account.status === "CLOSED" && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-beige-100 px-2 py-0.5 text-sm font-medium text-olive-700">
+                <Archive aria-hidden="true" className="size-3.5" />
+                {accountsTexts.detail.closed}
+              </span>
+            )}
+          </h2>
           <p className="mt-0.5 flex items-center gap-1.5 text-sm text-olive-700" title={account.spotifyEmail}>
             <Mail aria-hidden="true" className="size-4 shrink-0" />
             <span className="truncate">{account.spotifyEmail}</span>

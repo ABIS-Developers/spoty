@@ -19,6 +19,8 @@ type ClientsState = {
   create: (input: ClientInput) => Promise<Client>;
   /** Throws on failure so the form can show the error inline. */
   update: (id: string, input: Partial<ClientInput>) => Promise<Client>;
+  /** Sets CANCELLED + cancelledAt; the slot(s) become free because only ACTIVE clients hold slots. */
+  cancel: (id: string, cancelledAt: string) => Promise<Client>;
 };
 
 function upsert(clients: Client[], client: Client): Client[] {
@@ -51,6 +53,12 @@ export const useClientsStore = create<ClientsState>((set) => ({
 
   update: async (id, input) => {
     const client = await clientsApi.update(id, input);
+    set((state) => ({ clients: upsert(state.clients, client) }));
+    return client;
+  },
+
+  cancel: async (id, cancelledAt) => {
+    const client = await clientsApi.update(id, { status: "CANCELLED", cancelledAt });
     set((state) => ({ clients: upsert(state.clients, client) }));
     return client;
   },

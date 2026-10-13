@@ -33,6 +33,7 @@ export const clientsTexts = {
     notes: "Notas",
     payments: "Historial",
     splitTitle: "Promo compartida",
+    cancelHint: "Da de baja al cliente cuando ya lo hayas sacado del plan en Spotify. Libera su espacio y conserva su historial.",
     contact: "Contacto",
     whatsappLabel: "WhatsApp",
     emailLabel: "Correo de Spotify",
@@ -51,6 +52,16 @@ export const clientsTexts = {
       overdueBy: (days: number) => (days === 1 ? "Venció ayer" : `Venció hace ${days} días`),
       cancelledTitle: "Cliente dado de baja",
     },
+  },
+  cancel: {
+    open: "Dar de baja",
+    title: "¿Dar de baja a este cliente?",
+    message: (name: string, slots: string) =>
+      `${name} dejará de ocupar ${slots}. El cliente y sus pagos se conservan como historial. Antes, sácalo del plan familiar en Spotify.`,
+    confirm: "Dar de baja",
+    error: "No se pudo dar de baja. Intenta de nuevo.",
+    slotIn: (slot: number, alias: string) => `el espacio ${slot} de ${alias}`,
+    and: " y ",
   },
   edit: {
     open: "Editar",

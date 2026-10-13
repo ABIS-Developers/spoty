@@ -14,6 +14,7 @@ import {
   StickyNote,
   User,
   UserRound,
+  UserX,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -27,6 +28,7 @@ import { accountShare } from "../lib/revenue";
 import { whatsappUrl } from "../lib/whatsapp";
 import { formatMoney } from "../../../shared/lib/money";
 import { clientsTexts } from "../texts";
+import { CancelClientDialog } from "./CancelClientDialog";
 import { ClientEditDialog } from "./ClientEditDialog";
 import { PaymentHero } from "./PaymentHero";
 
@@ -75,6 +77,7 @@ export function ClientDetailPage() {
   const loadAccounts = useAccountsStore((state) => state.load);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const [today] = useState(() => new Date());
   const { detail, plans } = clientsTexts;
 
@@ -241,6 +244,15 @@ export function ClientDetailPage() {
                 <p className="text-base break-words whitespace-pre-line">{client.notes}</p>
               </Card>
             )}
+
+            {isActive && (
+              <section className="flex flex-col gap-3 rounded-2xl border border-status-overdue/40 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                <p className="text-sm text-olive-700">{detail.cancelHint}</p>
+                <Button variant="danger" icon={UserX} onClick={() => setCancelOpen(true)} className="shrink-0">
+                  {clientsTexts.cancel.open}
+                </Button>
+              </section>
+            )}
           </div>
         </div>
 
@@ -272,6 +284,12 @@ export function ClientDetailPage() {
       </div>
 
       <ClientEditDialog open={editOpen} onClose={() => setEditOpen(false)} client={client} />
+      <CancelClientDialog
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        client={client}
+        aliases={new Map(accounts.map((item) => [item.id, item.alias]))}
+      />
       <PaymentForm
         open={paymentOpen}
         onClose={() => setPaymentOpen(false)}
