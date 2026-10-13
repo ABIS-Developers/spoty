@@ -1,5 +1,5 @@
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
-import { AccountsPage } from "../features/accounts";
+import { AccountDetailPage, AccountsPage } from "../features/accounts";
 import { LoginPage, useSessionStore } from "../features/auth";
 import { AppShell } from "./layout/AppShell";
 
@@ -27,6 +27,7 @@ export function AppRoutes() {
       </Route>
       <Route element={<RequireSession />}>
         <Route path="/accounts" element={<AccountsPage />} />
+        <Route path="/accounts/:id" element={<AccountDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/accounts" replace />} />
     </Routes>

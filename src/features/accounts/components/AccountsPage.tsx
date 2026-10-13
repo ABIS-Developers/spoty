@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AlertTriangle, Plus, Users } from "lucide-react";
 import { Button, EmptyState, PageSpinner } from "../../../shared/components";
 import { useAccountsStore } from "../store/accountsStore";
@@ -10,6 +11,7 @@ export function AccountsPage() {
   const accounts = useAccountsStore((state) => state.accounts);
   const status = useAccountsStore((state) => state.status);
   const load = useAccountsStore((state) => state.load);
+  const navigate = useNavigate();
   const [formOpen, setFormOpen] = useState(false);
   const [today] = useState(() => new Date());
   const { page } = accountsTexts;
@@ -74,7 +76,11 @@ export function AccountsPage() {
         <Plus aria-hidden="true" className="size-6" />
       </button>
 
-      <AccountForm open={formOpen} onClose={() => setFormOpen(false)} />
+      <AccountForm
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSaved={(account) => navigate(`/accounts/${account.id}`)}
+      />
     </>
   );
 }

@@ -1,4 +1,6 @@
+export { AccountDetailPage } from "./components/AccountDetailPage";
 export { AccountsPage } from "./components/AccountsPage";
+export { SlotGrid, type SlotTileOccupant } from "./components/SlotGrid";
 export { nextBillingDate } from "./lib/billing";
 export {
   ADMIN_SLOT,
