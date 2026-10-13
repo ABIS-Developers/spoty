@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { LogOut } from "lucide-react";
 import { authTexts, useSessionStore } from "../../features/auth";
+import { InstallBanner } from "../../features/install";
 import { IconButton } from "../../shared/components";
 import { BottomTabBar } from "./BottomTabBar";
 import { Sidebar } from "./Sidebar";
@@ -20,6 +21,7 @@ export function AppShell({ children }: AppShellProps) {
         <IconButton icon={LogOut} label={authTexts.logout} onClick={logout} variant="inverse" />
       </header>
       <main className="mx-auto w-full max-w-6xl px-4 pt-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pb-10">
+        <InstallBanner />
         {children}
       </main>
       <BottomTabBar />

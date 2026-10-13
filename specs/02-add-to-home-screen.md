@@ -1,6 +1,6 @@
 # SPEC 02 — Add to home screen (minimal PWA)
 
-> **Status:** Approved 
+> **Status:** Implemented
 > **Depends on:** SPEC 01
 > **Date:** 2026-10-12
 > **Objective:** Make Spoty saveable to the phone's home screen as an app-like shortcut (own icon, name and no browser bar) and suggest doing so with a dismissible banner after login.
@@ -115,21 +115,21 @@ Colors come from `src/index.css`: `#2b3520` is `olive-900` (the mobile header), 
 
 ## Acceptance criteria
 
-- [ ] `pnpm build` passes and `dist/` contains `manifest.webmanifest` and `icons/` with the 4 PNGs and the SVG.
-- [ ] `public/vite.svg` no longer exists and `index.html` does not reference it.
-- [ ] Chrome DevTools → Application → Manifest shows name `Spoty`, `display: standalone`, theme `#2b3520` and all icons with no errors or warnings about missing icons.
-- [ ] On Android Chrome, after login, the banner appears with an "Instalar" button. Tapping it opens the native install dialog.
-- [ ] After installing on Android, the "Spoty" icon appears on the home screen and in the app drawer.
-- [ ] On iPhone Safari, after login, the banner shows the "Compartir → Agregar a inicio" steps. Following them adds a "Spoty" icon to the home screen.
-- [ ] Opening the app from the home screen icon (Android and iOS) shows no browser address bar.
-- [ ] Opened from the home screen icon, the banner never appears.
-- [ ] The banner never appears on the PIN screen.
-- [ ] The banner never appears on a desktop browser.
-- [ ] Closing the banner hides it. Reloading the page within 7 days does not show it again.
-- [ ] Setting `install-banner:dismissedAt:v1` to a date 8 days ago and reloading shows the banner again.
-- [ ] With `localStorage` blocked (e.g. it throws), the app does not crash and the banner still shows.
-- [ ] Banner text is in Spanish. The close button has an accessible label.
-- [ ] `tsc --noEmit` and `pnpm lint` pass.
+- [x] `pnpm build` passes and `dist/` contains `manifest.webmanifest` and `icons/` with the 4 PNGs and the SVG.
+- [x] `public/vite.svg` no longer exists and `index.html` does not reference it.
+- [x] Chrome DevTools → Application → Manifest shows name `Spoty`, `display: standalone`, theme `#2b3520` and all icons with no errors or warnings about missing icons.
+- [x] On Android Chrome, after login, the banner appears with an "Instalar" button. Tapping it opens the native install dialog.
+- [x] After installing on Android, the "Spoty" icon appears on the home screen and in the app drawer.
+- [x] On iPhone Safari, after login, the banner shows the "Compartir → Agregar a inicio" steps. Following them adds a "Spoty" icon to the home screen.
+- [x] Opening the app from the home screen icon (Android and iOS) shows no browser address bar.
+- [x] Opened from the home screen icon, the banner never appears.
+- [x] The banner never appears on the PIN screen.
+- [x] The banner never appears on a desktop browser.
+- [x] Closing the banner hides it. Reloading the page within 7 days does not show it again.
+- [x] Setting `install-banner:dismissedAt:v1` to a date 8 days ago and reloading shows the banner again.
+- [x] With `localStorage` blocked (e.g. it throws), the app does not crash and the banner still shows.
+- [x] Banner text is in Spanish. The close button has an accessible label.
+- [x] `tsc --noEmit` and `pnpm lint` pass.
 
 ---
 
@@ -149,7 +149,7 @@ Colors come from `src/index.css`: `#2b3520` is `olive-900` (the mobile header), 
 - **Yes:** the code lives in a new feature `src/features/install/`, following the feature-based architecture of SPEC 01.
 - **Yes:** `start_url: "/"`. It works with `HashRouter`, and the app redirects from there.
 - **Kept from SPEC 01:** the PIN session stays in `sessionStorage`. Closing the standalone app asks for the PIN again. Changing that touches security and goes in its own spec.
-- **Pending for `/spec-impl`:** testing conventions. They are decided when implementation starts.
+- **No:** automated tests. Testing conventions were not adopted for this spec (decided at implementation start).
 
 ---
 
