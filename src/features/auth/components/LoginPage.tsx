@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { AlertTriangle, Loader2, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
+import { Button, Input } from "../../../shared/components";
 import { useSessionStore } from "../store/sessionStore";
 import { authTexts } from "../texts";
 
@@ -40,40 +41,22 @@ export function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="pin" className="text-sm font-medium">
-              {authTexts.pinLabel}
-            </label>
-            <input
-              id="pin"
-              name="pin"
-              type="password"
-              inputMode="numeric"
-              autoComplete="current-password"
-              autoFocus
-              value={pin}
-              onChange={(event) => setPin(event.target.value)}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? "pin-error" : undefined}
-              className="h-12 w-full rounded-lg border border-beige-300 bg-white px-3 text-center text-base tracking-[0.4em] outline-none transition-colors duration-150 focus:border-olive-700 aria-invalid:border-status-overdue"
-            />
-            {error && (
-              <p id="pin-error" role="alert" className="flex items-center gap-1.5 text-sm text-status-overdue">
-                <AlertTriangle aria-hidden="true" className="size-4 shrink-0" />
-                {error}
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            aria-busy={submitting}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-olive-700 font-medium text-white transition-colors duration-150 hover:bg-olive-600 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {submitting && <Loader2 aria-hidden="true" className="size-5 animate-spin" />}
+          <Input
+            id="pin"
+            name="pin"
+            label={authTexts.pinLabel}
+            type="password"
+            inputMode="numeric"
+            autoComplete="current-password"
+            autoFocus
+            value={pin}
+            onChange={(event) => setPin(event.target.value)}
+            error={error}
+            className="h-12 text-center tracking-[0.4em]"
+          />
+          <Button type="submit" loading={submitting} fullWidth className="h-12">
             {submitting ? authTexts.submitting : authTexts.submit}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

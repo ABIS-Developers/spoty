@@ -18,6 +18,29 @@
   --color-status-paid: #1e7a46;
   --color-status-pending: #9a6700;
   --color-status-overdue: #b42318;
+
+  --animate-fade-in: fade-in 200ms ease-out;
+  --animate-sheet-in: sheet-in 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-pop-in: pop-in 200ms ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
 }
 
 @layer base {
@@ -38,6 +61,13 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-olive-700;
   }
+}
+
+/* react-day-picker themed with the olive palette */
+.rdp-root {
+  --rdp-accent-color: var(--color-olive-700);
+  --rdp-accent-background-color: var(--color-olive-100);
+  --rdp-today-color: var(--color-olive-700);
 }
 
 @media (prefers-reduced-motion: reduce) {
