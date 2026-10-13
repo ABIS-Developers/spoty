@@ -34,6 +34,19 @@ export const paymentsApi = {
     return records.map(toPayment);
   },
 
+  /** Fresh payments of one client, to re-check duplicates right before saving. */
+  async listByClient(clientId: string): Promise<Payment[]> {
+    const records = await listAll((nextToken) =>
+      getDataClient().models.Payment.list({
+        filter: { clientId: { eq: clientId } },
+        selectionSet: PAYMENT_FIELDS,
+        limit: 1000,
+        nextToken,
+      }),
+    );
+    return records.map(toPayment);
+  },
+
   async create(input: PaymentInput): Promise<Payment> {
     const { data, errors } = await getDataClient().models.Payment.create(input);
     throwIfErrors(errors);

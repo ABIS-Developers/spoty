@@ -1,7 +1,7 @@
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { AccountDetailPage, AccountsPage } from "../features/accounts";
 import { LoginPage, useSessionStore } from "../features/auth";
-import { ClientForm } from "../features/clients";
+import { ClientDetailPage, ClientForm } from "../features/clients";
 import { AppShell } from "./layout/AppShell";
 
 function RequireSession() {
@@ -30,6 +30,7 @@ export function AppRoutes() {
         <Route path="/accounts" element={<AccountsPage />} />
         <Route path="/accounts/:id" element={<AccountDetailPage />} />
         <Route path="/accounts/:id/clients/new" element={<ClientForm />} />
+        <Route path="/clients/:id" element={<ClientDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/accounts" replace />} />
     </Routes>

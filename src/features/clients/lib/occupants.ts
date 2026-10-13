@@ -1,4 +1,4 @@
-import { addMonths } from "date-fns";
+import { addMonths, differenceInCalendarDays, parse } from "date-fns";
 import type { SlotTileOccupant } from "../../accounts";
 import { currentPeriod, dueDate, paymentStatus, type Payment } from "../../payments";
 import type { Client } from "../api/clientsApi";
@@ -14,11 +14,12 @@ export function paymentsByClient(payments: ReadonlyArray<Payment>): Map<string, 
   return grouped;
 }
 
-/** Due date shown for a client: this period's, or next period's once paid. */
+/** Due date of the first unpaid period from the current one on, so payments made in advance push it forward. */
 export function nextDueDate(client: Client, payments: ReadonlyArray<Payment>, today: Date): string {
-  const paid = payments.some((payment) => payment.period === currentPeriod(today));
-  const period = currentPeriod(paid ? addMonths(today, 1) : today);
-  return dueDate(period, client.paymentDay);
+  const paid = new Set(payments.map((payment) => payment.period));
+  let months = 0;
+  while (paid.has(currentPeriod(addMonths(today, months)))) months += 1;
+  return dueDate(currentPeriod(addMonths(today, months)), client.paymentDay);
 }
 
 /** ACTIVE clients of `accountId` as slot grid tiles. */
@@ -43,4 +44,9 @@ export function buildOccupants(
         nextDueDate: nextDueDate(client, clientPayments, today),
       };
     });
+}
+
+/** Calendar days from `today` to `isoDate`; negative when it already passed. */
+export function daysUntil(isoDate: string, today: Date): number {
+  return differenceInCalendarDays(parse(isoDate, "yyyy-MM-dd", new Date()), today);
 }

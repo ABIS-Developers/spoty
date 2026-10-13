@@ -17,6 +17,8 @@ type ClientsState = {
   load: () => Promise<void>;
   /** Re-checks the slots against fresh data, then creates. Throws on failure. */
   create: (input: ClientInput) => Promise<Client>;
+  /** Throws on failure so the form can show the error inline. */
+  update: (id: string, input: Partial<ClientInput>) => Promise<Client>;
 };
 
 function upsert(clients: Client[], client: Client): Client[] {
@@ -42,6 +44,12 @@ export const useClientsStore = create<ClientsState>((set) => ({
     const fresh = await clientsApi.listByAccount(input.accountId);
     if (!areSlotsFree(input.slots, { id: input.accountId }, fresh)) throw new SlotsTakenError();
     const client = await clientsApi.create(input);
+    set((state) => ({ clients: upsert(state.clients, client) }));
+    return client;
+  },
+
+  update: async (id, input) => {
+    const client = await clientsApi.update(id, input);
     set((state) => ({ clients: upsert(state.clients, client) }));
     return client;
   },

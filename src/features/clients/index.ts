@@ -7,6 +7,7 @@ export {
   type PlanType,
 } from "./lib/pricing";
 export type { Client, ClientInput, ClientStatus } from "./api/clientsApi";
+export { ClientDetailPage } from "./components/ClientDetailPage";
 export { ClientForm } from "./components/ClientForm";
 export { useClientsData } from "./hooks/useClientsData";
 export { buildOccupants, nextDueDate, paymentsByClient } from "./lib/occupants";

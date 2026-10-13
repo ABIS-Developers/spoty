@@ -1,6 +1,6 @@
 import { getDate } from "date-fns";
 import { parseISODate } from "../../../shared/lib/dates";
-import type { ClientInput } from "../api/clientsApi";
+import type { Client, ClientInput } from "../api/clientsApi";
 import { PRICES, SLOTS_BY_PLAN, type PlanType } from "./pricing";
 import { clientsTexts } from "../texts";
 
@@ -87,5 +87,39 @@ export function toClientInput(accountId: string, values: ClientFormValues): Clie
     slots: [...values.slots].sort((a, b) => a - b),
     secondName: isPromo ? optional(values.secondName) : null,
     secondSpotifyEmail: isPromo ? optional(values.secondSpotifyEmail) : null,
+  };
+}
+
+/** Form values for editing an existing client. */
+export function clientFormFrom(client: Client): ClientFormValues {
+  return {
+    planType: client.planType,
+    slots: client.slots,
+    name: client.name,
+    phone: client.phone ?? "",
+    spotifyEmail: client.spotifyEmail ?? "",
+    secondName: client.secondName ?? "",
+    secondSpotifyEmail: client.secondSpotifyEmail ?? "",
+    startDate: client.startDate,
+    paymentDay: client.paymentDay,
+    amount: String(client.amount),
+    firstPaymentReceived: false,
+    notes: client.notes ?? "",
+  };
+}
+
+/** Editable fields only; plan, account and slots change through "move". */
+export function toClientUpdate(values: ClientFormValues): Partial<ClientInput> {
+  const input = toClientInput("", values);
+  return {
+    name: input.name,
+    phone: input.phone,
+    spotifyEmail: input.spotifyEmail,
+    notes: input.notes,
+    startDate: input.startDate,
+    paymentDay: input.paymentDay,
+    amount: input.amount,
+    secondName: input.secondName,
+    secondSpotifyEmail: input.secondSpotifyEmail,
   };
 }
