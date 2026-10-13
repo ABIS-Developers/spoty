@@ -1,17 +1,54 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { pinAuthorizer } from "../functions/pin-authorizer/resource";
 
-/*== STEP 1 ===============================================================
-The section below creates a Todo database table with a "content" field. Try
-adding a new "isDone" field as a boolean. The authorization rule below
-specifies that any user authenticated via an API key can "create", "read",
-"update", and "delete" any "Todo" records.
-=========================================================================*/
 const schema = a.schema({
-  Todo: a
+  AccountStatus: a.enum(["ACTIVE", "CLOSED"]),
+  PlanType: a.enum(["SINGLE", "PROMO"]),
+  ClientStatus: a.enum(["ACTIVE", "CANCELLED"]),
+
+  Account: a
     .model({
-      content: a.string(),
+      alias: a.string().required(), // e.g. "Cuenta 1"
+      spotifyEmail: a.email().required(),
+      spotifyPassword: a.string().required(), // plain text, DynamoDB encryption at rest
+      billingDay: a.integer().required(), // 1–31, Spotify charge day
+      monthlyCost: a.integer().required(), // default 240
+      status: a.ref("AccountStatus").required(),
+      notes: a.string(),
+      clients: a.hasMany("Client", "accountId"),
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [allow.custom()]),
+
+  Client: a
+    .model({
+      accountId: a.id().required(),
+      account: a.belongsTo("Account", "accountId"),
+      name: a.string().required(),
+      phone: a.string(),
+      spotifyEmail: a.email(),
+      notes: a.string(),
+      startDate: a.date().required(), // YYYY-MM-DD
+      paymentDay: a.integer().required(), // 1–31, default = day of startDate
+      planType: a.ref("PlanType").required(),
+      amount: a.integer().required(), // monthly, default from PRICES
+      slots: a.integer().array().required(), // [n] for SINGLE, [n, m] for PROMO; values 1–5
+      secondName: a.string(), // PROMO only
+      secondSpotifyEmail: a.email(), // PROMO only
+      status: a.ref("ClientStatus").required(),
+      cancelledAt: a.date(),
+      payments: a.hasMany("Payment", "clientId"),
+    })
+    .authorization((allow) => [allow.custom()]),
+
+  Payment: a
+    .model({
+      clientId: a.id().required(),
+      client: a.belongsTo("Client", "clientId"),
+      period: a.string().required(), // "YYYY-MM"
+      paidAt: a.date().required(),
+      amount: a.integer().required(),
+    })
+    .authorization((allow) => [allow.custom()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -19,39 +56,11 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: "apiKey",
-    // API Key is used for a.allow.public() rules
-    apiKeyAuthorizationMode: {
-      expiresInDays: 30,
+    defaultAuthorizationMode: "lambda",
+    lambdaAuthorizationMode: {
+      function: pinAuthorizer,
+      // Short cache so a rotated PIN takes effect quickly.
+      timeToLiveInSeconds: 60,
     },
   },
 });
-
-/*== STEP 2 ===============================================================
-Go to your frontend source code. From your client-side code, generate a
-Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
-WORK IN THE FRONTEND CODE FILE.)
-
-Using JavaScript or Next.js React Server Components, Middleware, Server 
-Actions or Pages Router? Review how to generate Data clients for those use
-cases: https://docs.amplify.aws/gen2/build-a-backend/data/connect-to-API/
-=========================================================================*/
-
-/*
-"use client"
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-
-const client = generateClient<Schema>() // use this Data client for CRUDL requests
-*/
-
-/*== STEP 3 ===============================================================
-Fetch records from the database and use them in your frontend component.
-(THIS SNIPPET WILL ONLY WORK IN THE FRONTEND CODE FILE.)
-=========================================================================*/
-
-/* For example, in a React component, you can use this snippet in your
-  function's RETURN statement */
-// const { data: todos } = await client.models.Todo.list()
-
-// return <ul>{todos.map(todo => <li key={todo.id}>{todo.content}</li>)}</ul>
