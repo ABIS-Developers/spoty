@@ -1,7 +1,12 @@
-import { AppShell } from "./layout/AppShell";
+import { HashRouter } from "react-router-dom";
+import { AppRoutes } from "./routes";
 
 function App() {
-  return <AppShell />;
+  return (
+    <HashRouter>
+      <AppRoutes />
+    </HashRouter>
+  );
 }
 
 export default App;
